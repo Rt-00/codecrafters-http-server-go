@@ -49,20 +49,6 @@ func handleConnections(conn net.Conn) {
 			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 		} else if strings.Split(path, "/")[1] == "echo" {
 			message := strings.Split(path, "/")[2]
-
-			for _, line := range strings.Split(request, "\n") {
-				if strings.HasPrefix(line, "Accept-Encoding:") {
-					encoding := strings.Split(line, ":")[1]
-					if strings.TrimSpace(encoding) != "gzip" {
-						conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(message), message)))
-						return
-					}
-
-					conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Encoding: %s\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", strings.TrimSpace(encoding), len(message), message)))
-					return
-				}
-			}
-
 			conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(message), message)))
 		} else if strings.Split(path, "/")[1] == "user-agent" {
 			userAgent := strings.TrimSpace(strings.Split(request, "User-Agent:")[1])
