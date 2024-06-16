@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -21,7 +22,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println(conn)
+	req := make([]byte, 1024)
+	conn.Read(req)
 
-	conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	if strings.HasPrefix(string(req), "GET / HTTP/1.1") {
+		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	} else {
+		conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+	}
 }
