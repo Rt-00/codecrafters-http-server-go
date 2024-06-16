@@ -52,13 +52,15 @@ func handleConnections(conn net.Conn) {
 
 			for _, line := range strings.Split(request, "\n") {
 				if strings.HasPrefix(line, "Accept-Encoding:") {
-					encoding := strings.Split(line, ":")[1]
-					if strings.TrimSpace(encoding) != "gzip" {
-						conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(message), message)))
+					encoding := strings.Split(strings.TrimSpace(line), ":")[1]
+					requestEncodingList := strings.Join(strings.Split(strings.TrimSpace(encoding), ", "), " ")
+
+					if strings.Contains(requestEncodingList, "gzip") {
+						conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Encoding: %s\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", "gzip", len(message), message)))
 						return
 					}
 
-					conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Encoding: %s\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", strings.TrimSpace(encoding), len(message), message)))
+					conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(message), message)))
 					return
 				}
 			}
