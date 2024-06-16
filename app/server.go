@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"net"
 	"os"
@@ -24,7 +26,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		handleConnections(conn)
+		go handleConnections(conn)
 	}
 }
 
@@ -56,12 +58,24 @@ func handleConnections(conn net.Conn) {
 					requestEncodingList := strings.Join(strings.Split(strings.TrimSpace(encoding), ", "), " ")
 
 					if strings.Contains(requestEncodingList, "gzip") {
-						conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Encoding: %s\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", "gzip", len(message), message)))
+						var buffer bytes.Buffer
+
+						gzipWriter := gzip.NewWriter(&buffer)
+						_, err := gzipWriter.Write([]byte(message))
+						if err != nil {
+							fmt.Println("Error compressing message: ", err)
+							return
+						}
+						if err := gzipWriter.Close(); err != nil {
+							fmt.Println("Error flushing compressed message:", err)
+							return
+						}
+
+						body := buffer.String()
+
+						conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Encoding: %s\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", "gzip", len(body), body)))
 						return
 					}
-
-					conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(message), message)))
-					return
 				}
 			}
 
